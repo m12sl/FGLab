@@ -33,6 +33,7 @@ block content
             th Hyperparameter Optimisation
             th Experiment Results
             th Add to Machine
+            th Extra File
         tbody
           - each project in projects
             tr
@@ -52,6 +53,11 @@ block content
               td
                 select.form-control.c-select.add-to-machine
                 button.btn.btn-primary-outline.btn-sm.add-to-machine(type="button", data-id="#{project._id}") #[span.octicon.octicon-plus]
+              td
+                form#extra-file
+                  fieldset.form-group
+                    input#extraFile.form-control-file(name="extraFile", type="file")
+                  button.btn.btn-primary(type="submit") upload extra file
 
     .col-sm-6
       h1 #[span.mega-octicon.octicon-device-desktop] Machines
@@ -107,7 +113,7 @@ block scripts
             url: address + "/projects",
             type: "PUT",
             contentType: "application/json",
-            data: JSON.stringify({project_id: id})
+            data: JSON.stringify({project_id: id,op:"double-dash"})
           })
           .then(function(resp) {
             alert(resp.msg);
