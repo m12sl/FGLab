@@ -4,6 +4,7 @@
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 [![Docker Pulls](https://img.shields.io/docker/pulls/kaixhin/fglab.svg)](https://hub.docker.com/r/kaixhin/fglab/)
 [![Docker Stars](https://img.shields.io/docker/stars/kaixhin/fglab.svg)](https://hub.docker.com/r/kaixhin/fglab/)
+[![Gitter](https://img.shields.io/gitter/room/nwjs/nw.js.svg)](https://gitter.im/Kaixhin/FGLab?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 # ![FGLab](public/images/fglab-logo.png)
 
@@ -46,6 +47,12 @@ Start a [MongoDB container](https://hub.docker.com/_/mongo/) and link it to the 
 ```sh
 sudo docker run -d --name mongodb mongo
 sudo docker run -d --name fglab --link mongodb:mongo -p 5080:5080 kaixhin/fglab
+```
+
+Although not recommended, it is possible to adjust [project schema](#projects) and other parts of the database. This can be accomplished either by connecting directly to MongoDB or via a GUI such as [mongo-express](https://github.com/mongo-express/mongo-express).
+
+```sh
+sudo docker run -d --name mongo-express --link mongodb:mongo -p 8081:8081 mongo-express
 ```
 
 ### Option 3: Heroku
@@ -100,6 +107,14 @@ Note that machines are implementation-independent, and may well store their own 
 ## Examples
 
 Examples utilising the range of abilities of FGLab/FGMachine can be found in the [examples folder](examples).
+
+## Password protection
+
+Just set up PASSWORD variable without and quotes in .env file to protect your FGLab with a password. Note: you should type in that password into password field, when prompted to.
+Example:
+```
+PASSWORD=friend
+```
 
 ## API
 

@@ -16,6 +16,7 @@ var Promise = require("bluebird");
 var WebSocketServer = require("ws").Server;
 var db = require("./db").db;
 
+
 /* App instantiation */
 var app = express();
 var jsonParser = bodyParser.json({limit: '100mb'}); // Parses application/json
@@ -25,7 +26,22 @@ app.use(favicon(path.join(__dirname, "public/favicon.ico"))); // Deal with favic
 app.use(express.static(path.join(__dirname, "public"), {index: false, maxAge: '1d'})); // Static directory
 app.use("/bower_components", express.static(path.join(__dirname, "bower_components"), {index: false, maxAge: '1d'})); // Bower components
 app.set("view engine", "jade"); // Jade template engine
-app.use(morgan("tiny")); // Log requests
+app.use(morgan("common")); // Log requests
+
+if (process.env.PASSWORD) {
+  var auth = require('http-auth');
+  var basic = auth.basic({
+          realm: "Type PASSWORD set in .env into password field or remove it from file",
+          skipUser: true,
+      }, function (username, password, callback) { 
+          // Custom authentication
+          // Use callback(error) if you want to throw async error.
+          callback(password === process.env.PASSWORD);
+      }
+  );
+  app.use(auth.connect(basic));
+}
+
 
 /* API */
 

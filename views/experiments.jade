@@ -6,6 +6,11 @@ block title
 block styles
   link(href="/bower_components/bootstrap-table/dist/bootstrap-table.min.css", rel="stylesheet")
   //link(href="/bower_components/bootstrap-table/dist/extensions/sticky-header/bootstrap-table-sticky-header.css", rel="stylesheet")
+  // Fix for Bootstrap 3 CSS
+  style.
+    .pull-right {
+      float: right;
+    }
 
 block content 
   h1 #[span.mega-octicon.octicon-list-ordered] Project: #{project.name} #[small.text-muted (#{project._id})]
@@ -54,7 +59,7 @@ block scripts
 
     // Create columns from options
     var columns = [
-      {field: "_id", title: "", formatter: function(val) {return "<button data-id='" + val + "' class='btn btn-danger-outline btn-sm delete'><span class='octicon octicon-trashcan'></span></button>";}},
+      {field: "_id", title: "", formatter: function(val) {return "<button data-id='" + val + "' class='btn btn-outline-danger btn-sm delete'><span class='octicon octicon-trashcan'></span></button>";}},
       {field: "_id", title: "ID", sortable: "true", formatter: function(val) {return "<a href='/experiments/" + val + "'>" + val + "</a>";}},
       {field: "_status", title: "Status", sortable: "true", formatter: function(val) {
         // Colour-code status
@@ -100,11 +105,13 @@ block scripts
     }
 
     $(function() {
+      // Switch to container-fluid
+      $(".container").toggleClass("container container-fluid");
+
       // Initialise experiment table
       $("#experiments").bootstrapTable({
-        classes: "table",
+        classes: "table table-sm table-hover",
         undefinedText: "",
-        striped: true,
         sortName: "_started",
         sortOrder: "desc",
         iconsPrefix: "octicon",
@@ -112,6 +119,7 @@ block scripts
         columns: columns,
         showColumns: true,
         data: experiments,
+        toolbarAlign: "right",
         //stickyHeader: true,
         showMultiSort: true,
         showExport: true,
