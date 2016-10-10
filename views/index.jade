@@ -68,7 +68,7 @@ block content
               td
                 form#extra-file
                   fieldset.form-group
-                    input#extraFile.form-control-file(name="extraFile", type="file")
+                    input.form-control-file(name="extrafile", type="file")
                   button.btn.btn-primary(type="submit") upload extra file
 
 
@@ -101,6 +101,28 @@ block scripts
         });
         return false; // Stop event and propagation
       });
+
+      //Transfer file to nodes
+      $("#extra-file").on("submit", function() {
+        // Extract file
+        var fd = new FormData($(this)[0]);
+        // Send
+        $.ajax({
+          url: "/api/v1/projects/extrafile",
+          type: "POST",
+          data: fd,
+          processData: false,
+          contentType: false
+        })
+        .then(function() {
+          
+        })
+        .catch(function(err) {
+          alert(err.responseText); // Display server error
+        });
+        return false; // Stop event and propagation
+      });
+
 
       // Add project template to machine
       $("button.add-to-machine").on("click", function() {
@@ -191,7 +213,7 @@ block scripts
       for (var i = 0; i < machines.length; i++) {
         (function(i) {
           // Indicate status of machines
-          var host = machines[i].address.replace(/^http/, 'ws'); // WebSocket server address
+          var host = machines[i].address.replace(/^http/, 'wss'); // WebSocket server address
           var ws = null; // WebSocket
           var $status = $("#machine-status-" + machines[i]._id); // Machine status icon
           var hostname = machines[i].hostname;

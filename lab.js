@@ -12,6 +12,7 @@ var compression = require("compression");
 var favicon = require("serve-favicon");
 var morgan = require("morgan");
 var rp = require("request-promise");
+var fs = require("mz/fs");
 var Promise = require("bluebird");
 var WebSocketServer = require("ws").Server;
 var db = require("./db").db;
@@ -200,6 +201,41 @@ app.post("/api/v1/projects/schema", upload.single("schema"), (req, res, next) =>
     next(err);
   });
 });
+
+// transfer file to machines
+app.post("/api/v1/projects/extrafile", upload.single("extrafile"), (req, res, next) => {
+   // Extract file name
+  var name = req.file.originalname;
+  // Create form data
+  var formData = {_files: []};
+  // Add file
+  formData._files.push(req.file.ReadStream);
+  //find hostname from database
+  db.machines.find({}, {address: 1}).toArrayAsync()
+  .then((machines) => {
+  	var macsP = Array(machines.length);
+  	//console.log(machines.length+"``````"+machines);
+  	//Loop over machines
+  	Promise.any(macsP)
+  	.then((availableMac)=>{
+  		console.log("availableMac:"+availableMac);
+  		availableMac = JSON.parse(availableMac);
+  		console.log(availableMac.address+"---");
+  		//res.status(200).send("success");
+  		//rp({uri: availableMac.address + "/api/v1/experiments/" + experimentId + "/extrafile", method: "PUT", formData: formData, gzip: true});
+  	})
+  	.catch((error)=>{
+  		reject(error);
+  	});
+  })
+  .catch((error)=>{
+  	reject(error);
+  });
+  
+
+});
+
+
 
 var optionChecker = (schema, obj) => {
   for (var prop in schema) {
