@@ -1,7 +1,16 @@
 /* Modules */
 require("./env"); // Load configuration variables
-var http = require("http");
+
+var cfg = {
+  ssl: true,
+  port: process.env.FGLAB_PORT,
+  ssl_key: process.env.SSL_KEY,
+  ssl_cert: process.env.SSL_CERT
+}
+
+var httpServ = ( cfg.ssl ) ? require('https') : require('http');
 var path = require("path");
+var fs = require('fs');
 var EventEmitter = require("events").EventEmitter;
 var mediator = new EventEmitter();
 var _ = require("lodash");
@@ -15,6 +24,8 @@ var rp = require("request-promise");
 var Promise = require("bluebird");
 var WebSocketServer = require("ws").Server;
 var db = require("./db").db;
+
+
 
 
 /* App instantiation */
@@ -654,7 +665,16 @@ app.use((err, req, res, next) => {
 });
 
 /* HTTP server */
-var server = http.createServer(app); // Create HTTP server
+var server = null;
+if ( cfg.ssl ) {
+  var server = httpServ.createServer(
+    { key: fs.readFileSync( cfg.ssl_key ),cert: fs.readFileSync( cfg.ssl_cert ) },
+    app); // Create HTTPS server
+  
+} else {
+  server = httpServ.createServer(app); // Create HTTP server
+}
+
 if (!process.env.FGLAB_PORT) {
   console.log("Error: No port specified");
   process.exit(1);
