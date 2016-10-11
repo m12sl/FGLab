@@ -2,7 +2,7 @@
 require("./env"); // Load configuration variables
 
 var cfg = {
-  ssl: true,
+  ssl: ( process.env.SSL_KEY && process.env.SSL_CERT),
   port: process.env.FGLAB_PORT,
   ssl_key: process.env.SSL_KEY,
   ssl_cert: process.env.SSL_CERT
