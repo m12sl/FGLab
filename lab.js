@@ -678,28 +678,20 @@ app.get("/machines/:id", (req, res, next) => {
 app.get("/experiments/:id", (req, res, next) => {
   db.experiments.findByIdAsync(req.params.id)
   .then((result) => {
-    var projP = db.projects.findByIdAsync(result._project_id, {name: 1}); // Find project name
-    var macP = db.machines.findByIdAsync(result._machine_id, {hostname: 1, address: 1}); // Find machine hostname and address
-    Promise.all([projP, macP]) 
-    .then((results) => {
-      console.log(req.params.id);
-      console.log(result._id);
-      console.log(result._project_id);
-      console.log(projP);
-      console.log(macP);
-      res.render("experiment", {experiment: result, project: results[0], machine: results[1]});
-      console.log("===========");
-      console.log(req.params.id);
-      console.log(result._id);
-      console.log(projP);
-      console.log(macP);
-    })
-    .catch((err) => {
-      console.log(err);
-    });
+    var projP = db.projects.findById(result._project_id, {name: 1}); // Find project name
+    var macP = db.machines.findById(result._machine_id, {hostname: 1, address: 1}); // Find machine hostname and address
+    // findByIdAsync
+    res.render("experiment", {experiment: result, project: projP, machine: macP});
+    // Promise.all([projP, macP]) 
+    // .then((results) => {
+    //   res.render("experiment", {experiment: result, project: results[0], machine: results[1]});
+    // })
+    // .catch((err) => {
+    //   next(err);
+    // });
   })
   .catch((err) => {
-    console.log(err);
+    next(err);
   });
 });
 
