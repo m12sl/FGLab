@@ -63,12 +63,14 @@ block content
                   button.btn.btn-outline-primary.btn-sm(type="button") #[span.octicon.octicon-list-ordered]
               td
                 select.form-control.c-select.add-to-machine
-
-                button.btn.btn-outline-primary.btn-sm.add-to-machine(type="button", data-id="#{project._id}") #[span.octicon.octicon-plus]
+                button.btn.btn-outline-primary.btn-sm.add-to-machine(type="button", data-id="#{project._id}", data-command="#{project.command.command}", data-args="#{JSON.stringify(project.command.args)}", data-options="#{project.command.options}", data-capacity="#{project.command.capacity}")  #[span.octicon.octicon-plus]
               td
                 form#extra-file
                   fieldset.form-group
-                    input.form-control-file(name="extrafile", type="file")
+                    input.form-control-file(name="extrafile", type="file", data-id="#{project._id}")
+                  select(name="runFlag")
+                    option(value="0") run/no                    
+                    option(value="1") run/yes
                   button.btn.btn-primary(type="submit") upload extra file
 
 
@@ -106,9 +108,10 @@ block scripts
       $("#extra-file").on("submit", function() {
         // Extract file
         var fd = new FormData($(this)[0]);
+        var id = $(this).find("input").data("id");
         // Send
         $.ajax({
-          url: "/api/v1/projects/extrafile",
+          url: "/api/v1/projects/"+id+"/extrafile",
           type: "POST",
           data: fd,
           processData: false,
@@ -128,8 +131,12 @@ block scripts
       $("button.add-to-machine").on("click", function() {
         var $el = $(this);
         var id = $el.data("id");
-        var $select = $el.prev();
-        var address = $select.val();
+        var address = $el.prev().val();
+
+        var command = $el.data("command");
+        var args = $el.data("args");
+        var options = $el.data("options");
+        var capacity = $el.data("capacity");
 
         if (address) {
           // Send
@@ -137,7 +144,12 @@ block scripts
             url: address + "/projects",
             type: "PUT",
             contentType: "application/json",
-            data: JSON.stringify({project_id: id,op:"double-dash"})
+            data: JSON.stringify({project_id:id,
+                    command:command,
+                    args:args,
+                    options:options,
+                    capacity:capacity
+                  })
           })
           .then(function(resp) {
             alert(resp.msg);
@@ -146,6 +158,7 @@ block scripts
             alert(err.responseText); // Display server error
           });
         }
+
         return false; // Stop event and propagation
       });
 
@@ -213,7 +226,7 @@ block scripts
       for (var i = 0; i < machines.length; i++) {
         (function(i) {
           // Indicate status of machines
-          var host = machines[i].address.replace(/^http/, 'wss'); // WebSocket server address
+          var host = machines[i].address.replace(/^http/, 'ws'); // WebSocket server address
           var ws = null; // WebSocket
           var $status = $("#machine-status-" + machines[i]._id); // Machine status icon
           var hostname = machines[i].hostname;

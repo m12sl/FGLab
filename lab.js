@@ -191,9 +191,9 @@ app.post("/api/v1/projects/schema", upload.single("schema"), (req, res, next) =>
   // Extract file name
   var name = req.file.originalname.replace(".json", "");
   // Extract .json as object
-  var schema = JSON.parse(req.file.buffer.toString());
+  var data = JSON.parse(req.file.buffer.toString());
   // Store
-  db.projects.insertAsync({name: name, schema: schema}, {})
+  db.projects.insertAsync({name: name, schema: data.schema, command: data.command}, {})
   .then((result) => {
     res.send(result);
   })
@@ -203,26 +203,40 @@ app.post("/api/v1/projects/schema", upload.single("schema"), (req, res, next) =>
 });
 
 // transfer file to machines
-app.post("/api/v1/projects/extrafile", upload.single("extrafile"), (req, res, next) => {
-   // Extract file name
-  var name = req.file.originalname;
+app.post("/api/v1/projects/:id/extrafile", upload.single("extrafile"), (req, res) => {
+  
+  var proId = req.params.id;
+  var runFlag = req.body.runFlag;
+
+  var dir = "/root/FGLab/cloudml_optimisation/"+proId+"/";
+  //Check directory or create
+  if (!fs.existsSync(dir)){
+    fs.mkdirSync(dir);
+  }
+  // Extract file name
+  var filename = dir+req.file.originalname;
+  // Wirte to local 
+  fs.writeFile(filename, req.file.buffer, (err) => {
+    if (err) throw err;
+  });
+
   // Create form data
-  var formData = {_files: []};
+  var formData = {_file:""};
   // Add file
-  formData._files.push(req.file.ReadStream);
+  formData._file = fs.createReadStream(filename);
+
   //find hostname from database
   db.machines.find({}, {address: 1}).toArrayAsync()
   .then((machines) => {
-  	var macsP = Array(machines.length);
-  	//console.log(machines.length+"``````"+machines);
   	//Loop over machines
-  	Promise.any(macsP)
+  	Promise.any(machines)
   	.then((availableMac)=>{
-  		console.log("availableMac:"+availableMac);
-  		availableMac = JSON.parse(availableMac);
-  		console.log(availableMac.address+"---");
-  		//res.status(200).send("success");
-  		//rp({uri: availableMac.address + "/api/v1/experiments/" + experimentId + "/extrafile", method: "PUT", formData: formData, gzip: true});
+
+  		// availableMac = JSON.parse(availableMac);
+  		
+  		var message = rp({uri: availableMac.address+"/projects/"+proId+"/extrafile/"+runFlag, method: "PUT", formData:formData , gzip: true});
+
+  		res.status(200).send({msg: message});
   	})
   	.catch((error)=>{
   		reject(error);
@@ -594,7 +608,7 @@ app.post("/api/v1/machines/:id/projects", jsonParser, (req, res, next) => {
 
 // List projects and machines on homepage
 app.get("/", (req, res, next) => {
-  var projP = db.projects.find({}, {name: 1}).sort({name: 1}).toArrayAsync(); // Get project names
+  var projP = db.projects.find({}, {name: 1,command: 1}).sort({name: 1}).toArrayAsync(); // Get project names
   var macP = db.machines.find({}, {address: 1, hostname: 1}).sort({hostname: 1}).toArrayAsync(); // Get machine addresses and hostnames
   Promise.all([projP, macP])
   .then((results) => {
@@ -668,14 +682,24 @@ app.get("/experiments/:id", (req, res, next) => {
     var macP = db.machines.findByIdAsync(result._machine_id, {hostname: 1, address: 1}); // Find machine hostname and address
     Promise.all([projP, macP]) 
     .then((results) => {
+      console.log(req.params.id);
+      console.log(result._id);
+      console.log(result._project_id);
+      console.log(projP);
+      console.log(macP);
       res.render("experiment", {experiment: result, project: results[0], machine: results[1]});
+      console.log("===========");
+      console.log(req.params.id);
+      console.log(result._id);
+      console.log(projP);
+      console.log(macP);
     })
     .catch((err) => {
-      next(err);
+      console.log(err);
     });
   })
   .catch((err) => {
-    next(err);
+    console.log(err);
   });
 });
 
