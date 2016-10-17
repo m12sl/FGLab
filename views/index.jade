@@ -226,53 +226,23 @@ block scripts
       for (var i = 0; i < machines.length; i++) {
         (function(i) {
           // Indicate status of machines
-          var host = machines[i].address.replace(/^http/, 'ws'); // WebSocket server address
+          var host = machines[i].address.replace(/^http/, 'wss'); // WebSocket server address
           var ws = null; // WebSocket
           var $status = $("#machine-status-" + machines[i]._id); // Machine status icon
           var hostname = machines[i].hostname;
           var address = machines[i].address;
 
-          // Connects to WebSocket server
-          var wsConnect = function() {
-            ws = new WebSocket(host); // Attempt to connect
+          // Adjust machine dropdowns =======start========= temporary addition for test
 
-            // Set server status as on
-            ws.onopen = function(event) {
-              // Set status
-              $status.removeClass("text-danger");
-              $status.addClass("text-success");
-              // Adjust machine dropdowns
-              onlineMachines = _.union(onlineMachines, [hostname]);
-              $macDropdowns.empty();
-              for (var i = 0; i < onlineMachines.length; i++) {
-                $macDropdowns.append("<option value='" + address + "'>" + hostname + "</option>");
-              }
-            };
-            // Set server status as off
-            ws.onclose = function(event) {
-              // Set status
-              $status.removeClass("text-success");
-              $status.addClass("text-danger");
-              // Adjust machine dropdowns
-              _.pull(onlineMachines, hostname);
-              $macDropdowns.empty();
-              for (var i = 0; i < onlineMachines.length; i++) {
-                $macDropdowns.append("<option value='" + address + "'>" + hostname + "</option>");
-              }
-            };
-          };
+          onlineMachines = _.union(onlineMachines, [hostname]);
+          $macDropdowns.empty();
+          for (var i = 0; i < onlineMachines.length; i++) {
+            $macDropdowns.append("<option value='" + address + "'>" + hostname + "</option>");
+          }
 
-          // Reconnects to WebSocket server if needed
-          var wsReconnect = function() {
-            if (!ws || ws.readyState === WebSocket.CLOSED) {
-              wsConnect();
-            }
-          };
+          //=========end======= temporary addition for test 
 
-          // Connect 
-          wsConnect();
-          // Attempt to reconnect every 5s if necessary
-          setInterval(wsReconnect, 5000);
+
         })(i); // Status indicators in function closure
       }
     });
