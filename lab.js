@@ -2,7 +2,7 @@
 require("./env"); // Load configuration variables
 
 var cfg = {
-  ssl: ( process.env.SSL_KEY && process.env.SSL_CERT ),
+  ssl: ( process.env.SSL_KEY && process.env.SSL_CERT),
   port: process.env.FGLAB_PORT,
   ssl_key: process.env.SSL_KEY,
   ssl_cert: process.env.SSL_CERT
@@ -24,7 +24,7 @@ var rp = require("request-promise");
 var Promise = require("bluebird");
 var WebSocketServer = require("ws").Server;
 var db = require("./db").db;
-var cors = require('cors');
+
 
 
 
@@ -38,8 +38,6 @@ app.use(express.static(path.join(__dirname, "public"), {index: false, maxAge: '1
 app.use("/bower_components", express.static(path.join(__dirname, "bower_components"), {index: false, maxAge: '1d'})); // Bower components
 app.set("view engine", "jade"); // Jade template engine
 app.use(morgan("common")); // Log requests
-app.use(cors({credentials: true, origin: true, preflightContinue:true}));
-//app.use(cors());
 
 if (process.env.PASSWORD) {
   var auth = require('http-auth');
@@ -672,10 +670,8 @@ if ( cfg.ssl ) {
   var server = httpServ.createServer(
     { key: fs.readFileSync( cfg.ssl_key ),cert: fs.readFileSync( cfg.ssl_cert ) },
     app); // Create HTTPS server
-  console.log("HTTPS mode");
   
 } else {
-  console.log("HTTP mode");
   server = httpServ.createServer(app); // Create HTTP server
 }
 
@@ -691,8 +687,6 @@ if (!process.env.FGLAB_PORT) {
 
 /* WebSocket server */
 // Add websocket server
-
-
 var wss = new WebSocketServer({server: server});
 // Catches errors to prevent FGMachine crashing if browser disconnect undetected
 var wsErrHandler = function() {};
@@ -706,10 +700,6 @@ wss.on("connection", (ws) => {
 
   // Perform clean up if necessary
   ws.on("close", () => {
-    console.log("Client closed connection");
+    //console.log("Client closed connection");
   });
-
-
 });
-
-

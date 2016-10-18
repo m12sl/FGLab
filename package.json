@@ -27,7 +27,6 @@
     "body-parser": "^1.15.2",
     "bower": "^1.7.9",
     "compression": "^1.6.2",
-    "cors": "^2.8.1",
     "dotenv": "^2.0.0",
     "express": "^5.0.0-alpha.2",
     "http-auth": "^2.4.10",
