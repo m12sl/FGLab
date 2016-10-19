@@ -10,7 +10,7 @@ RUN cd /root && git clone https://github.com/Leo-Gao/FGLab.git && cd FGLab && \
 # npm install (with root)
   npm install --unsafe-perm && \
 # Create .env with port
-  echo "FGLAB_PORT=8080" > .env
+  echo "FGLAB_PORT=443" > .env
 
 # Create hppts dependencies
 RUN export SSL_KEY=key.pem
@@ -20,7 +20,7 @@ RUN openssl req -x509 -newkey rsa:4096 -keyout $SSL_KEY -out $SSL_CERT -days 7 -
 # Expose port
 EXPOSE 443
 EXPOSE 8080
-EXPOSE 5080
+#EXPOSE 5080
 # Set working directory
 WORKDIR /root/FGLab
 # Start server
