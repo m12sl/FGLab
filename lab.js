@@ -689,22 +689,51 @@ app.get("/machines/:id", (req, res, next) => {
 app.get("/experiments/:id", (req, res, next) => {
   db.experiments.findByIdAsync(req.params.id)
   .then((result) => {
-    var projP = db.projects.findById(result._project_id, {name: 1}); // Find project name
-    var macP = db.machines.findById(result._machine_id, {hostname: 1, address: 1}); // Find machine hostname and address
-    // findByIdAsync
-    res.render("experiment", {experiment: result, project: projP, machine: macP});
-    // Promise.all([projP, macP]) 
-    // .then((results) => {
-    //   res.render("experiment", {experiment: result, project: results[0], machine: results[1]});
-    // })
-    // .catch((err) => {
-    //   next(err);
-    // });
+    var projP = db.projects.findByIdAsync(result._project_id, {name: 1}); // Find project name
+    var macP = db.machines.findByIdAsync(result._machine_id, {hostname: 1, address: 1}); // Find machine hostname and address
+    Promise.all([projP, macP]) 
+    .then((results) => {
+      res.render("experiment", {experiment: result, project: results[0], machine: results[1]});
+    })
+    .catch((err) => {
+      next(err);
+    });
   })
   .catch((err) => {
     next(err);
   });
 });
+
+// // Experiment page
+// app.get("/experiments/:id", (req, res, next) => {
+//   db.experiments.findByIdAsync(req.params.id)
+//   .then((result) => {
+//     console.log(result._project_id);
+//     console.log(result._machine_id);
+//     // var projP = db.projects.find({_id:db.toObjectID(result._project_id)}, {name: 1}); // Find project name
+//     // var macP = db.machines.find({_id:db.toObjectID(result._machine_id)}, {hostname: 1, address: 1}); // Find machine hostname and address
+//     var projP = {"name":""};
+//     var macP = {"hostname":"","address":""};
+//     db.projects.findByIdAsync({"_id" : result._project_id}).then((proj)=>{projP.name=proj.name;}); // Find project name
+//     db.machines.findByIdAsync({"_id" : result._machine_id}).then((mac)=>{macP.hostname=mac.hostname;}); // Find machine hostname and address
+
+//     console.log("projP  name==  "+projP.name);
+    
+//     console.log("macp  add==  "+macP.hostname);
+//     // findByIdAsync
+//     res.render("experiment", {experiment: result, project: projP, machine: macP});
+//     // Promise.all([projP, macP]) 
+//     // .then((results) => {
+//     //   res.render("experiment", {experiment: result, project: results[0], machine: results[1]});
+//     // })
+//     // .catch((err) => {
+//     //   next(err);
+//     // });
+//   })
+//   .catch((err) => {
+//     next(err);
+//   });
+// });
 
 
 /* Errors */
