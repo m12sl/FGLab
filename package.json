@@ -40,6 +40,7 @@
     "request": "^2.75.0",
     "request-promise": "^4.1.1",
     "serve-favicon": "^2.3.0",
+    "mz": "^2.4.0",
     "ws": "^1.1.1"
   },
   "devDependencies": {

@@ -65,7 +65,7 @@ block content
                 select.form-control.c-select.add-to-machine
                 button.btn.btn-outline-primary.btn-sm.add-to-machine(type="button", data-id="#{project._id}", data-command="#{project.command.command}", data-args="#{JSON.stringify(project.command.args)}", data-options="#{project.command.options}", data-capacity="#{project.command.capacity}")  #[span.octicon.octicon-plus]
               td
-                form#extra-file
+                form.extra-file
                   fieldset.form-group
                     input.form-control-file(name="extrafile", type="file", data-id="#{project._id}")
                   select(name="runFlag")
@@ -105,7 +105,7 @@ block scripts
       });
 
       //Transfer file to nodes
-      $("#extra-file").on("submit", function() {
+      $(".extra-file").on("submit", function() {
         // Extract file
         var fd = new FormData($(this)[0]);
         var id = $(this).find("input").data("id");
