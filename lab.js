@@ -237,24 +237,28 @@ app.post("/api/v1/projects/:id/extrafile", upload.single("extrafile"), (req, res
   formData._file = fs.createReadStream(filename);
 
   //find hostname from database
+  var arrs = [];
   db.machines.find({}, {address: 1}).toArrayAsync()
   .then((machines) => {
   	//Loop over machines
-  	Promise.any(machines)
-  	.then((availableMac)=>{
-
-  		// availableMac = JSON.parse(availableMac);
-  		
-  		var message = rp({uri: availableMac.address+"/projects/"+proId+"/extrafile/"+runFlag, method: "PUT", formData:formData , gzip: true});
-
-  		res.status(200).send({msg: message});
-  	})
-  	.catch((error)=>{
-  		reject(error);
-  	});
+    for(var i = 0; i < machines.length; i++){
+      arrs.push(rp({uri: machines[i].address+"/projects/"+proId+"/extrafile/"+runFlag, method: "PUT", formData:formData , gzip: true}));
+    }
+    Promise.all(arrs).then((result)=>{
+      var message = [];
+      for(var i = 0; i < result.length ; i++){
+        message.push(result[i].toString());
+      }
+      res.status(200).send({msg: message});   
+    }).catch((error)=>{
+      console.log(error);
+      res.status(500).send({msg:error.message});
+    });
+    
+  	
   })
   .catch((error)=>{
-  	reject(error);
+  	console.log(error);
   });
   
 
@@ -703,37 +707,6 @@ app.get("/experiments/:id", (req, res, next) => {
     next(err);
   });
 });
-
-// // Experiment page
-// app.get("/experiments/:id", (req, res, next) => {
-//   db.experiments.findByIdAsync(req.params.id)
-//   .then((result) => {
-//     console.log(result._project_id);
-//     console.log(result._machine_id);
-//     // var projP = db.projects.find({_id:db.toObjectID(result._project_id)}, {name: 1}); // Find project name
-//     // var macP = db.machines.find({_id:db.toObjectID(result._machine_id)}, {hostname: 1, address: 1}); // Find machine hostname and address
-//     var projP = {"name":""};
-//     var macP = {"hostname":"","address":""};
-//     db.projects.findByIdAsync({"_id" : result._project_id}).then((proj)=>{projP.name=proj.name;}); // Find project name
-//     db.machines.findByIdAsync({"_id" : result._machine_id}).then((mac)=>{macP.hostname=mac.hostname;}); // Find machine hostname and address
-
-//     console.log("projP  name==  "+projP.name);
-    
-//     console.log("macp  add==  "+macP.hostname);
-//     // findByIdAsync
-//     res.render("experiment", {experiment: result, project: projP, machine: macP});
-//     // Promise.all([projP, macP]) 
-//     // .then((results) => {
-//     //   res.render("experiment", {experiment: result, project: results[0], machine: results[1]});
-//     // })
-//     // .catch((err) => {
-//     //   next(err);
-//     // });
-//   })
-//   .catch((err) => {
-//     next(err);
-//   });
-// });
 
 
 /* Errors */

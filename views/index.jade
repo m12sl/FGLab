@@ -30,7 +30,7 @@ block content
             | &nbsp;
             span(id="machine-status-#{machine._id}") ●
             | &nbsp;
-            a(href="/machines/" + machine._id) #{machine.hostname}
+            a(href="/machines/" + machine._id) #{machine.hostname}（#{machine.address}）
 
     .col-sm-12
       h2 Existing Projects
@@ -117,8 +117,8 @@ block scripts
           processData: false,
           contentType: false
         })
-        .then(function() {
-          
+        .then(function(res) {
+          alert(res.msg);
         })
         .catch(function(err) {
           alert(err.responseText); // Display server error
@@ -232,15 +232,6 @@ block scripts
           var hostname = machines[i].hostname;
           var address = machines[i].address;
 
-          // Adjust machine dropdowns =======start========= temporary addition for test
-
-          //onlineMachines = _.union(onlineMachines, [hostname]);
-          //$macDropdowns.empty();
-          //for (var i = 0; i < onlineMachines.length; i++) {
-          //  $macDropdowns.append("<option value='" + address + "'>" + hostname + "</option>");
-          //}
-
-          //=========end======= temporary addition for test 
           // Connects to WebSocket server
           var wsConnect = function() {
             ws = new WebSocket(host); // Attempt to connect
@@ -251,10 +242,10 @@ block scripts
               $status.removeClass("text-danger");
               $status.addClass("text-success");
               // Adjust machine dropdowns
-              onlineMachines = _.union(onlineMachines, [hostname]);
+              onlineMachines = _.unionWith(onlineMachines, [{"hostname":hostname,"address":address}]);
               $macDropdowns.empty();
               for (var i = 0; i < onlineMachines.length; i++) {
-                $macDropdowns.append("<option value='" + address + "'>" + hostname + "</option>");
+                $macDropdowns.append("<option value='" + onlineMachines[i].address + "'>" + onlineMachines[i].hostname + "</option>");
               }
             };
             // Set server status as off
@@ -263,10 +254,10 @@ block scripts
               $status.removeClass("text-success");
               $status.addClass("text-danger");
               // Adjust machine dropdowns
-              _.pull(onlineMachines, hostname);
+              _.pullAllWith(onlineMachines, [{"hostname":hostname,"address":address}], _.isEqual);
               $macDropdowns.empty();
               for (var i = 0; i < onlineMachines.length; i++) {
-                $macDropdowns.append("<option value='" + address + "'>" + hostname + "</option>");
+                $macDropdowns.append("<option value='" + onlineMachines[i].address + "'>" + onlineMachines[i].hostname + "</option>");
               }
             };
           };
