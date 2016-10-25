@@ -21,6 +21,7 @@ var compression = require("compression");
 var favicon = require("serve-favicon");
 var morgan = require("morgan");
 var rp = require("request-promise");
+var fs = require("mz/fs");
 var Promise = require("bluebird");
 var WebSocketServer = require("ws").Server;
 var db = require("./db").db;
@@ -201,9 +202,9 @@ app.post("/api/v1/projects/schema", upload.single("schema"), (req, res, next) =>
   // Extract file name
   var name = req.file.originalname.replace(".json", "");
   // Extract .json as object
-  var schema = JSON.parse(req.file.buffer.toString());
+  var data = JSON.parse(req.file.buffer.toString());
   // Store
-  db.projects.insertAsync({name: name, schema: schema}, {})
+  db.projects.insertAsync({name: name, schema: data.schema, command: data.command}, {})
   .then((result) => {
     res.send(result);
   })
@@ -211,6 +212,59 @@ app.post("/api/v1/projects/schema", upload.single("schema"), (req, res, next) =>
     next(err);
   });
 });
+
+// transfer file to machines
+app.post("/api/v1/projects/:id/extrafile", upload.single("extrafile"), (req, res) => {
+  
+  var proId = req.params.id;
+  var runFlag = req.body.runFlag;
+
+  var dir = "/root/FGLab/cloudml_optimisation/"+proId+"/";
+  //Check directory or create
+  if (!fs.existsSync(dir)){
+    fs.mkdirSync(dir);
+  }
+  // Extract file name
+  var filename = dir+req.file.originalname;
+  // Wirte to local 
+  fs.writeFile(filename, req.file.buffer, (err) => {
+    if (err) throw err;
+  });
+
+  // Create form data
+  var formData = {_file:""};
+  // Add file
+  formData._file = fs.createReadStream(filename);
+
+  //find hostname from database
+  var arrs = [];
+  db.machines.find({}, {address: 1}).toArrayAsync()
+  .then((machines) => {
+  	//Loop over machines
+    for(var i = 0; i < machines.length; i++){
+      arrs.push(rp({uri: machines[i].address+"/projects/"+proId+"/extrafile/"+runFlag, method: "PUT", formData:formData , gzip: true}));
+    }
+    Promise.all(arrs).then((result)=>{
+      var message = [];
+      for(var i = 0; i < result.length ; i++){
+        message.push(result[i].toString());
+      }
+      res.status(200).send({msg: message});   
+    }).catch((error)=>{
+      console.log(error);
+      res.status(500).send({msg:error.message});
+    });
+    
+  	
+  })
+  .catch((error)=>{
+  	console.log(error);
+  });
+  
+
+});
+
+
 
 var optionChecker = (schema, obj) => {
   for (var prop in schema) {
@@ -569,7 +623,7 @@ app.post("/api/v1/machines/:id/projects", jsonParser, (req, res, next) => {
 
 // List projects and machines on homepage
 app.get("/", (req, res, next) => {
-  var projP = db.projects.find({}, {name: 1}).sort({name: 1}).toArrayAsync(); // Get project names
+  var projP = db.projects.find({}, {name: 1,command: 1}).sort({name: 1}).toArrayAsync(); // Get project names
   var macP = db.machines.find({}, {address: 1, hostname: 1}).sort({hostname: 1}).toArrayAsync(); // Get machine addresses and hostnames
   Promise.all([projP, macP])
   .then((results) => {

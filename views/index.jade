@@ -30,7 +30,7 @@ block content
             | &nbsp;
             span(id="machine-status-#{machine._id}") ●
             | &nbsp;
-            a(href="/machines/" + machine._id) #{machine.hostname}
+            a(href="/machines/" + machine._id) #{machine.hostname}（#{machine.address}）
 
     .col-sm-12
       h2 Existing Projects
@@ -44,6 +44,7 @@ block content
             th Hyperparameter Optimisation
             th Experiment Results
             th Add to Machine
+            th Extra File
         tbody
           - each project in projects
             tr
@@ -62,7 +63,16 @@ block content
                   button.btn.btn-outline-primary.btn-sm(type="button") #[span.octicon.octicon-list-ordered]
               td
                 select.form-control.c-select.add-to-machine
-                button.btn.btn-outline-primary.btn-sm.add-to-machine(type="button", data-id="#{project._id}") #[span.octicon.octicon-plus]
+                button.btn.btn-outline-primary.btn-sm.add-to-machine(type="button", data-id="#{project._id}", data-command="#{project.command.command}", data-args="#{JSON.stringify(project.command.args)}", data-options="#{project.command.options}", data-capacity="#{project.command.capacity}")  #[span.octicon.octicon-plus]
+              td
+                form.extra-file
+                  fieldset.form-group
+                    input.form-control-file(name="extrafile", type="file", data-id="#{project._id}")
+                  select(name="runFlag")
+                    option(value="0") run/no                    
+                    option(value="1") run/yes
+                  button.btn.btn-primary(type="submit") upload extra file
+
 
 block scripts
   script(src="/bower_components/lodash/dist/lodash.min.js")
@@ -94,12 +104,39 @@ block scripts
         return false; // Stop event and propagation
       });
 
+      //Transfer file to nodes
+      $(".extra-file").on("submit", function() {
+        // Extract file
+        var fd = new FormData($(this)[0]);
+        var id = $(this).find("input").data("id");
+        // Send
+        $.ajax({
+          url: "/api/v1/projects/"+id+"/extrafile",
+          type: "POST",
+          data: fd,
+          processData: false,
+          contentType: false
+        })
+        .then(function(res) {
+          alert(res.msg);
+        })
+        .catch(function(err) {
+          alert(err.responseText); // Display server error
+        });
+        return false; // Stop event and propagation
+      });
+
+
       // Add project template to machine
       $("button.add-to-machine").on("click", function() {
         var $el = $(this);
         var id = $el.data("id");
-        var $select = $el.prev();
-        var address = $select.val();
+        var address = $el.prev().val();
+
+        var command = $el.data("command");
+        var args = $el.data("args");
+        var options = $el.data("options");
+        var capacity = $el.data("capacity");
 
         if (address) {
           // Send
@@ -107,7 +144,12 @@ block scripts
             url: address + "/projects",
             type: "PUT",
             contentType: "application/json",
-            data: JSON.stringify({project_id: id})
+            data: JSON.stringify({project_id:id,
+                    command:command,
+                    args:args,
+                    options:options,
+                    capacity:capacity
+                  })
           })
           .then(function(resp) {
             alert(resp.msg);
@@ -116,6 +158,7 @@ block scripts
             alert(err.responseText); // Display server error
           });
         }
+
         return false; // Stop event and propagation
       });
 
@@ -199,10 +242,10 @@ block scripts
               $status.removeClass("text-danger");
               $status.addClass("text-success");
               // Adjust machine dropdowns
-              onlineMachines = _.union(onlineMachines, [hostname]);
+              onlineMachines = _.unionWith(onlineMachines, [{"hostname":hostname,"address":address}]);
               $macDropdowns.empty();
               for (var i = 0; i < onlineMachines.length; i++) {
-                $macDropdowns.append("<option value='" + address + "'>" + hostname + "</option>");
+                $macDropdowns.append("<option value='" + onlineMachines[i].address + "'>" + onlineMachines[i].hostname + "</option>");
               }
             };
             // Set server status as off
@@ -211,10 +254,10 @@ block scripts
               $status.removeClass("text-success");
               $status.addClass("text-danger");
               // Adjust machine dropdowns
-              _.pull(onlineMachines, hostname);
+              _.pullAllWith(onlineMachines, [{"hostname":hostname,"address":address}], _.isEqual);
               $macDropdowns.empty();
               for (var i = 0; i < onlineMachines.length; i++) {
-                $macDropdowns.append("<option value='" + address + "'>" + hostname + "</option>");
+                $macDropdowns.append("<option value='" + onlineMachines[i].address + "'>" + onlineMachines[i].hostname + "</option>");
               }
             };
           };
@@ -230,6 +273,7 @@ block scripts
           wsConnect();
           // Attempt to reconnect every 5s if necessary
           setInterval(wsReconnect, 5000);
+
         })(i); // Status indicators in function closure
       }
     });
