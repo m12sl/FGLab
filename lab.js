@@ -40,6 +40,12 @@ app.use("/bower_components", express.static(path.join(__dirname, "bower_componen
 app.set("view engine", "jade"); // Jade template engine
 app.use(morgan("common")); // Log requests
 
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+
 if (process.env.PASSWORD) {
   var auth = require('http-auth');
   var basic = auth.basic({
@@ -54,6 +60,13 @@ if (process.env.PASSWORD) {
   app.use(auth.connect(basic));
 }
 
+var withDefaultOptions = function(options) {
+  var result = { rejectUnauthorized: false, requestCert: false, agent: false, strictSSL: false, tunnel: false }
+
+  for (var attrname in options) { result[attrname] = options[attrname]; }
+  return result;
+
+};
 
 /* API */
 
@@ -83,7 +96,7 @@ app.post("/api/v1/webhooks", jsonParser, (req, res) => {
   // Register with mediator
   mediator.once(objects + ":" + objId + ":" + event, () => {
     // Send webhook response
-    rp({uri: webhook.url, method: "POST", json: webhook, gzip: true})
+    rp(withDefaultOptions({uri: webhook.url, method: "POST", json: webhook, gzip: true}))
     .catch(() => {}); // Ignore failures from missing webhooks
   });
   return res.status(201).send({status: "Registered", options: webhook});
@@ -242,7 +255,7 @@ app.post("/api/v1/projects/:id/extrafile", upload.single("extrafile"), (req, res
   .then((machines) => {
   	//Loop over machines
     for(var i = 0; i < machines.length; i++){
-      arrs.push(rp({uri: machines[i].address+"/projects/"+proId+"/extrafile/"+runFlag, method: "PUT", formData:formData , gzip: true}));
+      arrs.push(rp(withDefaultOptions({uri: machines[i].address+"/projects/"+proId+"/extrafile/"+runFlag, method: "PUT", formData:formData , gzip: true})));
     }
     Promise.all(arrs).then((result)=>{
       var message = [];
@@ -309,7 +322,7 @@ var submitJob = (projId, options) => {
       var macsP = Array(machines.length);
       // Check machine capacities
       for (var i = 0; i < machines.length; i++) {
-        macsP[i] = rp({uri: machines[i].address + "/projects/" + projId + "/capacity", method: "GET", data: null});
+        macsP[i] = rp(withDefaultOptions({uri: machines[i].address + "/projects/" + projId + "/capacity", method: "GET", data: null}));
       }
 
       // Loop over reponses
@@ -323,7 +336,7 @@ var submitJob = (projId, options) => {
         .then((exp) => {
           options._id = exp.ops[0]._id.toString(); // Add experiment ID to sent options
           // Send project
-          rp({uri: availableMac.address + "/projects/" + projId, method: "POST", json: options, gzip: true})
+          rp(withDefaultOptions({uri: availableMac.address + "/projects/" + projId, method: "POST", json: options, gzip: true}))
           .then((body) => {
             resolve(body);
           })
