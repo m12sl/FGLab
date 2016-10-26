@@ -10,7 +10,7 @@ block content
     dt.col-sm-3 Hostname
     dd.col-sm-9 #{machine.hostname}
     dt.col-sm-3 Address
-    dd.col-sm-9 #{machine.address}
+    dd.col-sm-9 #[a(href=machine.address) #{machine.address}]
     dt.col-sm-3 OS
     dd.col-sm-9 #{machine.os.type} #{machine.os.arch} #{machine.os.release}
     dt.col-sm-3 CPUs
