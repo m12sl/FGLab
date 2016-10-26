@@ -251,11 +251,11 @@ app.post("/api/v1/projects/:id/extrafile", upload.single("extrafile"), (req, res
 
   //find hostname from database
   var arrs = [];
-  db.machines.find({}, {address: 1}).toArrayAsync()
+  db.machines.find({}, {local_address: 1, address: 1}).toArrayAsync()
   .then((machines) => {
   	//Loop over machines
     for(var i = 0; i < machines.length; i++){
-      arrs.push(rp(withDefaultOptions({uri: machines[i].address+"/projects/"+proId+"/extrafile/"+runFlag, method: "PUT", formData:formData , gzip: true})));
+      arrs.push(rp(withDefaultOptions({uri: machines[i].local_address+"/projects/"+proId+"/extrafile/"+runFlag, method: "PUT", formData:formData , gzip: true})));
     }
     Promise.all(arrs).then((result)=>{
       var message = [];
@@ -317,12 +317,12 @@ var optionChecker = (schema, obj) => {
 
 var submitJob = (projId, options) => {
   return new Promise((resolve, reject) => {
-    db.machines.find({}, {address: 1}).toArrayAsync() // Get machine hostnames
+    db.machines.find({}, {local_address: 1, address: 1}).toArrayAsync() // Get machine hostnames
     .then((machines) => {
       var macsP = Array(machines.length);
       // Check machine capacities
       for (var i = 0; i < machines.length; i++) {
-        macsP[i] = rp(withDefaultOptions({uri: machines[i].address + "/projects/" + projId + "/capacity", method: "GET", data: null}));
+        macsP[i] = rp(withDefaultOptions({uri: machines[i].local_address + "/projects/" + projId + "/capacity", method: "GET", data: null}));
       }
 
       // Loop over reponses
@@ -336,7 +336,7 @@ var submitJob = (projId, options) => {
         .then((exp) => {
           options._id = exp.ops[0]._id.toString(); // Add experiment ID to sent options
           // Send project
-          rp(withDefaultOptions({uri: availableMac.address + "/projects/" + projId, method: "POST", json: options, gzip: true}))
+          rp(withDefaultOptions({uri: availableMac.local_address + "/projects/" + projId, method: "POST", json: options, gzip: true}))
           .then((body) => {
             resolve(body);
           })
@@ -464,6 +464,8 @@ app.put("/api/v1/experiments/:id/started", (req, res, next) => {
     next(err);
   });
 });
+
+
 
 // Adds finished time to experiment
 app.put("/api/v1/experiments/:id/finished", (req, res, next) => {
@@ -614,11 +616,12 @@ app.post("/api/v1/machines/:id/projects", jsonParser, (req, res, next) => {
   db.machines.findByIdAsync(req.params.id)
   .then((result) => {
     // Fail if machine does not exist
+
     if (result === null) {
       return res.status(404).send({error: "Machine ID " + req.params.id + " does not exist"});
     }
-    // Register projects otherwise
     db.machines.updateByIdAsync(req.params.id, {$set: req.body})
+
     .then((result) => {
       // Update returns the count of affected objects
       res.send((result === 1) ? {msg: "success"} : {msg: "error"});
@@ -637,7 +640,7 @@ app.post("/api/v1/machines/:id/projects", jsonParser, (req, res, next) => {
 // List projects and machines on homepage
 app.get("/", (req, res, next) => {
   var projP = db.projects.find({}, {name: 1,command: 1}).sort({name: 1}).toArrayAsync(); // Get project names
-  var macP = db.machines.find({}, {address: 1, hostname: 1}).sort({hostname: 1}).toArrayAsync(); // Get machine addresses and hostnames
+  var macP = db.machines.find({}, {local_address: 1, address: 1, hostname: 1}).sort({hostname: 1}).toArrayAsync(); // Get machine addresses and hostnames
   Promise.all([projP, macP])
   .then((results) => {
     return res.render("index", {projects: results[0], machines: results[1]});
@@ -707,7 +710,7 @@ app.get("/experiments/:id", (req, res, next) => {
   db.experiments.findByIdAsync(req.params.id)
   .then((result) => {
     var projP = db.projects.findByIdAsync(result._project_id, {name: 1}); // Find project name
-    var macP = db.machines.findByIdAsync(result._machine_id, {hostname: 1, address: 1}); // Find machine hostname and address
+    var macP = db.machines.findByIdAsync(result._machine_id, {hostname: 1, local_address: 1, address: 1}); // Find machine hostname and address
     Promise.all([projP, macP]) 
     .then((results) => {
       res.render("experiment", {experiment: result, project: results[0], machine: results[1]});
