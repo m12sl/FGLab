@@ -38,6 +38,13 @@ block content
                   option(value="#{value}", selected) #{value}
                 else
                   option(value="#{value}") #{value}
+    each val, key in project.command
+      div
+        span #{key} : #{val} 
+    div 
+      span datainfo : #{project.datainfo}
+    div
+      span &nbsp;
     .form-group.row
       .col-sm-9.offset-sm-3
         button.btn.btn-primary(type="submit") Submit
