@@ -217,7 +217,7 @@ app.post("/api/v1/projects/schema", upload.single("schema"), (req, res, next) =>
   // Extract .json as object
   var data = JSON.parse(req.file.buffer.toString());
   // Store
-  db.projects.insertAsync({name: name, schema: data.schema, command: data.command}, {})
+  db.projects.insertAsync({name: name, schema: data.schema, command: data.command, datainfo: data.datainfo}, {})
   .then((result) => {
     res.send(result);
   })

@@ -28,10 +28,12 @@ block content
           li
             button.btn.btn-outline-danger.btn-sm.delete(data-type="machines", data-id="#{machine._id}", type="button") #[span.octicon.octicon-trashcan]
             | &nbsp;
-            span(id="machine-status-#{machine._id}") ●
+            span(id="machine-status-#{machine._id}") ● 
             | &nbsp;
             a(href="/machines/" + machine._id) #{machine.hostname}（#{machine.address}）
-
+            | &nbsp;
+            span Runing jobs: 
+            span(id="runingJobs-#{machine._id}") 0 
     .col-sm-12
       h2 Existing Projects
       table#projects.table
@@ -229,6 +231,7 @@ block scripts
           var host = machines[i].address.replace(/^http/, 'ws'); // WebSocket server address
           var ws = null; // WebSocket
           var $status = $("#machine-status-" + machines[i]._id); // Machine status icon
+          var $runingJobs = $("#runingJobs-" + machines[i]._id); // Runing jobs
           var hostname = machines[i].hostname;
           var address = machines[i].address;
 
@@ -247,6 +250,8 @@ block scripts
               for (var i = 0; i < onlineMachines.length; i++) {
                 $macDropdowns.append("<option value='" + onlineMachines[i].address + "'>" + onlineMachines[i].hostname + "</option>");
               }
+
+              ws.send("machineStatus:"+hostname);
             };
             // Set server status as off
             ws.onclose = function(event) {
@@ -259,6 +264,12 @@ block scripts
               for (var i = 0; i < onlineMachines.length; i++) {
                 $macDropdowns.append("<option value='" + onlineMachines[i].address + "'>" + onlineMachines[i].hostname + "</option>");
               }
+            };
+
+            ws.onmessage = function(event){
+              var data = JSON.parse(event.data);
+              $runingJobs.empty();
+              $runingJobs.html(data.count_experiments);
             };
           };
 

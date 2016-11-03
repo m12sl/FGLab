@@ -1,0 +1,23 @@
+{
+	"schema":
+	{
+		"tempc": {
+			"type": "float",
+			"default": 0.1
+		},
+		"penalty": {
+			"type": "string",
+			"default": "l1"
+		}
+	},
+	"command":
+	{
+		"command":"python",
+		"args":[
+			"test.py"
+			],
+		"options":"double-dash",
+		"capacity":0.5
+	},
+	"datainfo":"/root/FGMachine/cloudml_optimisation/data/*"
+}
