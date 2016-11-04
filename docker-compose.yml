@@ -1,0 +1,15 @@
+version: '2'
+
+services:
+  mongo:
+    image: mongo
+
+  fglab:
+    build: ./docker
+    links:
+      - mongo
+    ports:
+      - "5080:443"
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/FGLab
+    
