@@ -55,6 +55,19 @@ Although not recommended, it is possible to adjust [project schema](#projects) a
 sudo docker run -d --name mongo-express --link mongodb:mongo -p 8081:8081 mongo-express
 ```
 
+### Option 2.1: Docker-compose
+
+Just run docker-compose:
+```
+docker-compose up
+```
+
+You can add some services or modify params in `docker-compose.yml`.
+
+FGLab image builds from `docker/Dockerfile`.
+
+
+
 ### Option 3: Heroku
 
 The deploy button provisions a free dyno running FGLab on [Heroku](https://www.heroku.com), with a free 500MB MongoDB database from [MongoLab](https://mongolab.com/).
