@@ -68,6 +68,8 @@ var withDefaultOptions = function(options) {
 
 };
 
+var rootDir = process.env.ROOT_DIR;
+
 /* API */
 
 // Registers webhooks
@@ -228,17 +230,17 @@ app.post("/api/v1/projects/schema", upload.single("schema"), (req, res, next) =>
 
 // transfer file to machines
 app.post("/api/v1/projects/:id/extrafile", upload.single("extrafile"), (req, res) => {
-  
+  console.log("Uploading...");
   var proId = req.params.id;
   var runFlag = req.body.runFlag;
 
-  var dir = "/root/FGLab/cloudml_optimisation/"+proId+"/";
+  var dir = path.join(rootDir, "cloudml_optimisation", proId);
   //Check directory or create
   if (!fs.existsSync(dir)){
     fs.mkdirSync(dir);
   }
   // Extract file name
-  var filename = dir+req.file.originalname;
+  var filename = path.join(dir, req.file.originalname);
   // Wirte to local 
   fs.writeFile(filename, req.file.buffer, (err) => {
     if (err) throw err;
@@ -255,6 +257,8 @@ app.post("/api/v1/projects/:id/extrafile", upload.single("extrafile"), (req, res
   .then((machines) => {
   	//Loop over machines
     for(var i = 0; i < machines.length; i++){
+      //console.log("local_address ", machines[i].local_address)
+      console.log(Object.keys(machines[i]));
       arrs.push(rp(withDefaultOptions({uri: machines[i].local_address+"/projects/"+proId+"/extrafile/"+runFlag, method: "PUT", formData:formData , gzip: true})));
     }
     Promise.all(arrs).then((result)=>{
@@ -277,6 +281,33 @@ app.post("/api/v1/projects/:id/extrafile", upload.single("extrafile"), (req, res
 
 });
 
+
+// Stop a machine
+app.get("/stop/:id", (req, res, next) => {
+  db.machines.findByIdAsync(req.params.id)
+  .then((result) => {
+    var uri = result.local_address + "/stop";
+    var options = {
+      secret: result.shutdown_secret
+    }
+    rp(withDefaultOptions({uri: uri, method: "POST", json: options , gzip: true}))
+    .then((body) => {
+      resolve(body);
+      res.status(200).send({msg: "Done!"});   
+    })
+    .catch(() => {
+      //reject({error: "Failed to stop machine"});
+      //next(err);
+      console.log("No? "  + uri);
+      res.status(500).send({msg: "Failed to stop machine"});   
+    });
+    
+  })
+  .catch((err) => {
+    console.log("Nope");
+    next(err);
+  });
+});
 
 
 var optionChecker = (schema, obj) => {
@@ -330,7 +361,7 @@ var submitJob = (projId, options) => {
       // First machine with capacity, so use
       .then((availableMac) => {
         availableMac = JSON.parse(availableMac);
-
+        
         // Create experiment
         db.experiments.insertAsync({_options: options, _project_id: db.toObjectID(projId), _machine_id: db.toObjectID(availableMac._id), _files: [], _status: "running"}, {})
         .then((exp) => {
@@ -620,6 +651,7 @@ app.post("/api/v1/machines/:id/projects", jsonParser, (req, res, next) => {
     if (result === null) {
       return res.status(404).send({error: "Machine ID " + req.params.id + " does not exist"});
     }
+    console.log("Registering with " + Object.keys(req.body));
     db.machines.updateByIdAsync(req.params.id, {$set: req.body})
 
     .then((result) => {
